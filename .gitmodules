@@ -1,0 +1,7 @@
+[submodule "lib/Seeed_GFX"]
+	path = lib/Seeed_GFX
+	url = https://github.com/Seeed-Studio/Seeed_GFX.git
+[submodule "lib/lvgl"]
+	path = lib/lvgl
+	url = https://github.com/lvgl/lvgl.git
+	branch = release/v9.5
