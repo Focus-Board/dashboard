@@ -3,7 +3,6 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 
-/*Set to your screen resolution and rotation*/
 #define TFT_HOR_RES 800
 #define TFT_VER_RES 480
 
@@ -22,55 +21,14 @@ void arduino_print(lv_log_level_t level, const char *buf)
 }
 #endif
 
-// Convert RGB888 color to 6-color e-paper index
-static uint8_t rgb888_to_epaper_6color(uint8_t r, uint8_t g, uint8_t b)
+static uint8_t rgb888_to_epaper_4gray(uint8_t r, uint8_t g, uint8_t b)
 {
-    // White: High brightness
-    if (r > 200 && g > 200 && b > 200)
-    {
-        return TFT_WHITE; // 0x0
-    }
-
-    // Black: Low brightness
-    if (r < 50 && g < 50 && b < 50)
-    {
-        return TFT_BLACK; // 0xF
-    }
-
-    // Red: Red component dominates
-    if (r > g && r > b && r > 100)
-    {
-        return TFT_RED; // 0x6
-    }
-
-    // Green: Green component dominates
-    if (g > r && g > b && g > 100)
-    {
-        return TFT_GREEN; // 0x2
-    }
-
-    // Blue: Blue component dominates
-    if (b > r && b > g && b > 100)
-    {
-        return TFT_BLUE; // 0xD
-    }
-
-    // Yellow: High red+green, low blue
-    if (r > 100 && g > 100 && b < 100)
-    {
-        return TFT_YELLOW; // 0xB
-    }
-
-    // Gray area determination
-    uint8_t avg = (r + g + b) / 3;
-    if (avg > 128)
-    {
-        return TFT_WHITE; // Light gray -> White
-    }
-    else
-    {
-        return TFT_BLACK; // Dark gray -> Black
-    }
+    uint8_t gray = (r * 0.299 + g * 0.587 + b * 0.114);
+    
+    if (gray < 64) return 0x0;      // Black
+    else if (gray < 128) return 0x5; // Dark gray
+    else if (gray < 192) return 0xA; // Light gray
+    else return 0xF;                 // White
 }
 
 /* LVGL calls it when a rendered image needs to copied to the display*/
@@ -81,32 +39,38 @@ static void e1002_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t 
     int32_t w = lv_area_get_width(area);
     int32_t h = lv_area_get_height(area);
 
-    // LV_LOG_INFO("flushing: %d,%d - %dx%d", area->x1, area->y1, w, h);
+    Serial.print("Flushing area: ");
+    Serial.print(area->x1);
+    Serial.print(",");
+    Serial.print(area->y1);
+    Serial.print(" - ");
+    Serial.print(w);
+    Serial.print("x");
+    Serial.println(h);
 
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
         {
             lv_color_t lv_color = ((lv_color_t *)px_map)[y * w + x];
-            uint8_t r = lv_color.red;
-            uint8_t g = lv_color.green;
-            uint8_t b = lv_color.blue;
-            uint8_t epaper_clr_index = rgb888_to_epaper_6color(r, g, b);
-            // Serial.print(r); Serial.print(",");
-            // Serial.print(g); Serial.print(",");
-            // Serial.print(b); Serial.print("|");
-            // Serial.print(epaper_clr_index);
-            // Serial.print(" ");
-
+            
+            lv_color32_t c32 = lv_color_to_32(lv_color, 0xFF);
+            
+            uint8_t r = c32.red;
+            uint8_t g = c32.green;
+            uint8_t b = c32.blue;
+            
+            uint8_t epaper_clr_index = rgb888_to_epaper_4gray(r, g, b);
+            
             epd->drawPixel(area->x1 + x, area->y1 + y, epaper_clr_index);
         }
-        // Serial.println(";");
     }
 
     if (lv_display_flush_is_last(disp))
     {
         drv->flush_scheduled = true;
         drv->flush_scheduled_time = millis();
+        Serial.println("Last flush - scheduled refresh");
     }
 
     /*Call it to tell LVGL you are ready*/
@@ -153,13 +117,19 @@ static void resolution_changed_event_cb(lv_event_t *e)
 
 void e1002_display_init(e1002_driver_t *drv)
 {
+    Serial.println("  e1002_display_init called");
+    
     drv->epd = &epaper;
     drv->flush_scheduled = false;
     drv->flush_scheduled_time = 0;
 
+    Serial.println("  Calling epaper.begin()...");
     drv->epd->begin();
+    Serial.println("  epaper.begin() complete");
 
+    Serial.println("  Calling lv_init()...");
     lv_init();
+    Serial.println("  lv_init() complete");
 
     /*Set a tick source so that LVGL will know how much time elapsed. */
     lv_tick_set_cb(get_arduino_tick);
@@ -171,23 +141,26 @@ void e1002_display_init(e1002_driver_t *drv)
 
     lv_display_t *disp;
 
-    /*Else create a display yourself*/
+    Serial.println("  Creating LVGL display...");
     disp = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
     lv_display_set_driver_data(disp, (void *)drv);
     lv_display_set_flush_cb(disp, e1002_disp_flush);
-    // lv_display_add_event_cb(disp, resolution_changed_event_cb, LV_EVENT_RESOLUTION_CHANGED, NULL);
     lv_display_set_buffers(disp, draw_buf, NULL, sizeof(draw_buf), LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    /*Initialize the (dummy) input device driver*/
-    // lv_indev_t * indev = lv_indev_create();
-    // lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); /*Touchpad should have POINTER type*/
-    // lv_indev_set_read_cb(indev, device_touchpad_read);
+    
+    Serial.print("  Display buffer size: ");
+    Serial.print(sizeof(draw_buf));
+    Serial.println(" bytes");
+    Serial.print("  LV_COLOR_DEPTH: ");
+    Serial.println(LV_COLOR_DEPTH);
+    Serial.println("  LVGL display created");
 }
 
 void e1002_display_refresh(e1002_driver_t *drv)
 {
+    Serial.println("  Calling EPaper update()...");
     drv->epd->update();
     drv->flush_scheduled = false;
+    Serial.println("  EPaper update() complete");
 }
 
 void e1002_display_schedule_refresh(e1002_driver_t *drv)

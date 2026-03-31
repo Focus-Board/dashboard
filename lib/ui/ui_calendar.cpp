@@ -2,7 +2,6 @@
 #include <ArduinoJson.h>
 #include <time.h>
 
-// Display dimensions
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 480
 
@@ -11,7 +10,7 @@
 #define TIME_LABEL_WIDTH 50
 #define DAY_LABEL_HEIGHT 30
 #define ALL_DAY_HEIGHT 40
-#define CALENDAR_START_HOUR 6
+#define CALENDAR_START_HOUR 7
 #define CALENDAR_END_HOUR 23
 #define CALENDAR_HOURS (CALENDAR_END_HOUR - CALENDAR_START_HOUR)
 #define MINUTES_PER_STEP 15
@@ -32,7 +31,7 @@ struct CalendarEvent {
   time_t start_time;
   time_t end_time;
   bool is_all_day;
-  int day_of_week; // 0 = Monday, 6 = Sunday
+  int day_of_week; // 0 = Monday
 };
 
 static CalendarEvent events[MAX_EVENTS];
@@ -161,12 +160,11 @@ void ui_calendar_update_events(String jsonData) {
     
     CalendarEvent &evt = events[event_count];
     
-    // TODO: Get this to match what the server actually gives me
-    evt.name = eventObj["name"] | eventObj["title"] | "Untitled";
-    evt.is_all_day = eventObj["is_all_day"] | eventObj["allDay"] | false;
+    evt.name = eventObj["title"] | "Untitled";
+    evt.is_all_day = eventObj["all_day"] | false;
     
-    const char* start_str = eventObj["start_time"] | eventObj["start"] | "";
-    const char* end_str = eventObj["end_time"] | eventObj["end"] | "";
+    const char* start_str = eventObj["start_time"] | "";
+    const char* end_str = eventObj["end_time"] | "";
     
     struct tm start_tm = {0}, end_tm = {0};
     if (strlen(start_str) > 0) {
