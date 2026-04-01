@@ -4,7 +4,6 @@
 #define LV_COLOR_DEPTH 24
 #define LV_COLOR_16_SWAP 0
 
-/* Memory settings */
 #define LV_MEM_CUSTOM 0
 #define LV_MEM_SIZE (64U * 1024U)
 
@@ -44,17 +43,26 @@
 #define LV_USE_THEME_DEFAULT 1
 #define LV_THEME_DEFAULT_DARK 0
 
-/* Font settings */
 #define LV_FONT_MONTSERRAT_10 1
 #define LV_FONT_MONTSERRAT_12 1
 #define LV_FONT_MONTSERRAT_14 1
 #define LV_FONT_MONTSERRAT_16 1
+#define LV_FONT_MONTSERRAT_18 1
 #define LV_FONT_MONTSERRAT_20 1
+#define LV_FONT_MONTSERRAT_22 1
 
-/* Default font */
-#define LV_FONT_DEFAULT &lv_font_montserrat_14
+#define LV_FONT_MONTSERRAT_12_SUBPX 0
+#define LV_FONT_MONTSERRAT_14_SUBPX 0
+#define LV_FONT_MONTSERRAT_16_SUBPX 0
+#define LV_FONT_MONTSERRAT_18_SUBPX 0
+#define LV_FONT_MONTSERRAT_20_SUBPX 0
+
+#define LV_FONT_UNSCII_8 1
+#define LV_FONT_UNSCII_16 0
+
+#define LV_FONT_DEFAULT &lv_font_montserrat_16
 
 /* Text settings */
 #define LV_TXT_ENC LV_TXT_ENC_UTF8
 
-#endif /* LV_CONF_H */
+#endif 

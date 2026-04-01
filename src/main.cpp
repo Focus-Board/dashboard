@@ -10,14 +10,14 @@
 
 const int BUTTON_TOGGLE = 2;
 
-const unsigned long REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const unsigned long REFRESH_INTERVAL = 2 * 60 * 1000; // TODO: 2 minutes currently, use more infrequent updates in final
 const unsigned long DEBOUNCE_DELAY = 120;
 const unsigned long FULL_REFRESH_COOLDOWN = 1500;
 
 // API stuff
 const char* API_BASE = "http://72.240.83.248:8000";
 const char* EVENTS_ENDPOINT = "/api/calendar/events?days=7&days_back=7";
-const char* TASKS_ENDPOINT = "/api/calendar/tasks"; // TODO: update when
+const char* TASKS_ENDPOINT = "/api/calendar/tasks"; // TODO: update when tasks are exposed
 
 const char* NTP_SERVER = "pool.ntp.org";
 const long GMT_OFFSET_SEC = -5 * 3600; 
