@@ -16,6 +16,7 @@
 #define CURRENT_DAY_LINE_THICKNESS 3
 #define EVENT_PADDING 2       
 #define MIN_EVENT_HEIGHT 20   
+#define TIMEZONE_OFFSET -4 // EST   
 
 static lv_obj_t *screen_calendar = NULL;
 static ui_header_t header;
@@ -181,13 +182,13 @@ void ui_calendar_update_events(String jsonData) {
     struct tm start_tm = {0}, end_tm = {0};
     if (strlen(start_str) > 0) {
       strptime(start_str, "%Y-%m-%dT%H:%M:%S", &start_tm);
-      evt.start_time = mktime(&start_tm);
+      evt.start_time = mktime(&start_tm) + (TIMEZONE_OFFSET * 3600);
       evt.day_of_week = get_day_of_week_from_monday(&start_tm);
     }
     
     if (strlen(end_str) > 0) {
       strptime(end_str, "%Y-%m-%dT%H:%M:%S", &end_tm);
-      evt.end_time = mktime(&end_tm);
+      evt.end_time = mktime(&end_tm) + (TIMEZONE_OFFSET * 3600);
     }
     
     event_count++;
