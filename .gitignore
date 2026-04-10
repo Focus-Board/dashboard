@@ -3,4 +3,8 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+.vscode/settings.json
 include/wifi_credentials.h
+.cache/
+compile_commands.json
+/include/wifi_credentials.h

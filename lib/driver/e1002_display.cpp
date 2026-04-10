@@ -3,6 +3,10 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 
+#define TFT_GRAY_0 0X00
+#define TFT_GRAY_1 0X01
+#define TFT_GRAY_2 0X02
+#define TFT_GRAY_3 0X03
 #define TFT_HOR_RES 800
 #define TFT_VER_RES 480
 
@@ -23,12 +27,12 @@ void arduino_print(lv_log_level_t level, const char *buf)
 
 static uint8_t rgb888_to_epaper_4gray(uint8_t r, uint8_t g, uint8_t b)
 {
-    uint8_t gray = (r * 0.299 + g * 0.587 + b * 0.114);
+    uint8_t gray = r;
     
-    if (gray < 64) return 0x0;      // Black
-    else if (gray < 128) return 0x5; // Dark gray
-    else if (gray < 192) return 0xA; // Light gray
-    else return 0xF;                 // White
+    if (gray < 64) return TFT_GRAY_0;      // Black
+    else if (gray < 128) return TFT_GRAY_1; // Dark gray
+    else if (gray < 192) return TFT_GRAY_2; // Light gray
+    else return TFT_GRAY_3;                 // White
 }
 
 /* LVGL calls it when a rendered image needs to copied to the display*/
@@ -52,10 +56,10 @@ static void e1002_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t 
     {
         for (int x = 0; x < w; x++)
         {
+            
             lv_color_t lv_color = ((lv_color_t *)px_map)[y * w + x];
             
             lv_color32_t c32 = lv_color_to_32(lv_color, 0xFF);
-            
             uint8_t r = c32.red;
             uint8_t g = c32.green;
             uint8_t b = c32.blue;
@@ -77,10 +81,6 @@ static void e1002_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t 
     lv_display_flush_ready(disp);
 }
 
-/*Read the touchpad*/
-static void device_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
-{
-}
 
 /*use Arduinos millis() as tick source*/
 static uint32_t get_arduino_tick(void)
