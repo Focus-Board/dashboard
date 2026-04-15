@@ -3,10 +3,7 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 
-#define TFT_GRAY_0 0X00
-#define TFT_GRAY_1 0X01
-#define TFT_GRAY_2 0X02
-#define TFT_GRAY_3 0X03
+/*Set to your screen resolution and rotation*/
 #define TFT_HOR_RES 800
 #define TFT_VER_RES 480
 
@@ -25,14 +22,23 @@ void arduino_print(lv_log_level_t level, const char *buf)
 }
 #endif
 
-static uint8_t rgb888_to_epaper_4gray(uint8_t r, uint8_t g, uint8_t b)
+static uint8_t apply_dithering(uint8_t gray, int x, int y, int16_t *current_error, int16_t *next_error, int width)
 {
-    uint8_t gray = r;
+    int16_t adjusted = gray + current_error[x + 1];
     
-    if (gray < 64) return TFT_GRAY_0;      // Black
-    else if (gray < 128) return TFT_GRAY_1; // Dark gray
-    else if (gray < 192) return TFT_GRAY_2; // Light gray
-    else return TFT_GRAY_3;                 // White
+    if (adjusted < 0) adjusted = 0;
+    if (adjusted > 255) adjusted = 255;
+    
+    uint8_t output = (adjusted > 127) ? 0x03 : 0x00;
+    
+    int16_t error = adjusted - (output == 0x03 ? 255 : 0);
+    
+    next_error[x] += (error * 3) / 16;
+    next_error[x + 1] += (error * 5) / 16;
+    next_error[x + 2] += (error * 1) / 16;
+    current_error[x + 2] += (error * 7) / 16;
+    
+    return output;
 }
 
 /* LVGL calls it when a rendered image needs to copied to the display*/
@@ -43,44 +49,48 @@ static void e1002_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t 
     int32_t w = lv_area_get_width(area);
     int32_t h = lv_area_get_height(area);
 
-    Serial.print("Flushing area: ");
-    Serial.print(area->x1);
-    Serial.print(",");
-    Serial.print(area->y1);
-    Serial.print(" - ");
-    Serial.print(w);
-    Serial.print("x");
-    Serial.println(h);
+    int16_t current_error[w + 2];
+    int16_t next_error[w + 2];
+    
+    memset(current_error, 0, sizeof(current_error));
+    memset(next_error, 0, sizeof(next_error));
 
     for (int y = 0; y < h; y++)
     {
         for (int x = 0; x < w; x++)
         {
-            
             lv_color_t lv_color = ((lv_color_t *)px_map)[y * w + x];
-            
             lv_color32_t c32 = lv_color_to_32(lv_color, 0xFF);
+            
             uint8_t r = c32.red;
             uint8_t g = c32.green;
             uint8_t b = c32.blue;
             
-            uint8_t epaper_clr_index = rgb888_to_epaper_4gray(r, g, b);
+            uint8_t gray = (r * 0.299 + g * 0.587 + b * 0.114);
             
-            epd->drawPixel(area->x1 + x, area->y1 + y, epaper_clr_index);
+            uint8_t epaper_color = apply_dithering(gray, x, y, current_error, next_error, w);
+            
+            epd->drawPixel(area->x1 + x, area->y1 + y, epaper_color);
         }
+        
+        memcpy(current_error, next_error, sizeof(current_error));
+        memset(next_error, 0, sizeof(next_error));
     }
 
     if (lv_display_flush_is_last(disp))
     {
         drv->flush_scheduled = true;
         drv->flush_scheduled_time = millis();
-        Serial.println("Last flush - scheduled refresh");
     }
 
     /*Call it to tell LVGL you are ready*/
     lv_display_flush_ready(disp);
 }
 
+/*Read the touchpad*/
+static void device_touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
+{
+}
 
 /*use Arduinos millis() as tick source*/
 static uint32_t get_arduino_tick(void)
@@ -141,7 +151,8 @@ void e1002_display_init(e1002_driver_t *drv)
 
     lv_display_t *disp;
 
-    Serial.println("  Creating LVGL display...");
+    /*Create a display*/
+    Serial.println("  Creating LVGL display with Floyd-Steinberg dithering...");
     disp = lv_display_create(TFT_HOR_RES, TFT_VER_RES);
     lv_display_set_driver_data(disp, (void *)drv);
     lv_display_set_flush_cb(disp, e1002_disp_flush);
@@ -152,7 +163,8 @@ void e1002_display_init(e1002_driver_t *drv)
     Serial.println(" bytes");
     Serial.print("  LV_COLOR_DEPTH: ");
     Serial.println(LV_COLOR_DEPTH);
-    Serial.println("  LVGL display created");
+    Serial.println("  LVGL display created with Floyd-Steinberg dithering");
+    Serial.println("  Grayscale colors will appear as dithered B/W patterns");
 }
 
 void e1002_display_refresh(e1002_driver_t *drv)

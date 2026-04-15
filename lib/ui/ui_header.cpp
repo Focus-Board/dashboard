@@ -22,7 +22,7 @@ void ui_header_create(lv_obj_t *parent, ui_header_t *header) {
   header->time_label = lv_label_create(header->container);
   lv_obj_set_pos(header->time_label, 375, 4);
   lv_label_set_text(header->time_label, "00:00");
-  lv_obj_set_style_text_font(header->time_label, &lv_font_montserrat_22, 0);
+  lv_obj_set_style_text_font(header->time_label, &lv_font_montserrat_16, 0);
   lv_obj_set_style_text_color(header->time_label, lv_color_black(), 0);
   
   header->left_label = lv_label_create(header->container);

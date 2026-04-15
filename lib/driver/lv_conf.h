@@ -57,9 +57,9 @@
 #define LV_FONT_MONTSERRAT_18_SUBPX 0
 #define LV_FONT_MONTSERRAT_20_SUBPX 0
 
-#define LV_FONT_DECLARE (montserrat_bold_16);
-#define LV_FONT_DECLARE (montserrat_bold_18);
-#define LV_FONT_DECLARE (montserrat_bold_20);
+#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(montserrat_bold_16);
+#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(montserrat_bold_18);
+#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(montserrat_bold_22);
 
 #define LV_FONT_UNSCII_8 1
 #define LV_FONT_UNSCII_16 0

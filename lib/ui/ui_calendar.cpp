@@ -9,7 +9,7 @@
 #define TIME_LABEL_WIDTH 60
 #define DAY_LABEL_HEIGHT 30
 #define ALL_DAY_HEIGHT 35
-#define CALENDAR_START_HOUR 6
+#define CALENDAR_START_HOUR 7
 #define CALENDAR_END_HOUR 23
 #define CALENDAR_HOURS (CALENDAR_END_HOUR - CALENDAR_START_HOUR)
 #define LINE_THICKNESS 1      
@@ -17,6 +17,7 @@
 #define EVENT_PADDING 2       
 #define MIN_EVENT_HEIGHT 20   
 #define TIMEZONE_OFFSET -4 // EST   
+
 
 static lv_obj_t *screen_calendar = NULL;
 static ui_header_t header;
@@ -173,11 +174,11 @@ void ui_calendar_update_events(String jsonData) {
     if (event_count >= MAX_EVENTS) break;
     
     CalendarEvent &evt = events[event_count];
-    evt.name = eventObj["name"] | eventObj["title"] | "Untitled";
+    evt.name = eventObj["title"] | "Untitled";
     evt.is_all_day = eventObj["all_day"] | false;
     
-    const char* start_str = eventObj["start_time"] | eventObj["start"] | "";
-    const char* end_str = eventObj["end_time"] | eventObj["end"] | "";
+    const char* start_str = eventObj["start_time"] | "";
+    const char* end_str = eventObj["end_time"] | "";
     
     struct tm start_tm = {0}, end_tm = {0};
     if (strlen(start_str) > 0) {
@@ -250,7 +251,7 @@ static void draw_event_block(CalendarEvent &event, int col, int overlap_count, i
   lv_obj_t *event_block = lv_obj_create(calendar_container);
   lv_obj_set_size(event_block, block_width - 4, height);
   lv_obj_set_pos(event_block, x + 2, start_y);
-  lv_obj_set_style_bg_color(event_block, lv_color_black(), 0);
+  lv_obj_set_style_bg_color(event_block, lv_color_hex(0x404040), 0);
   lv_obj_set_style_bg_opa(event_block, LV_OPA_COVER, 0);
   lv_obj_set_style_border_width(event_block, 0, 0);
   lv_obj_set_style_pad_all(event_block, EVENT_PADDING, 0);
